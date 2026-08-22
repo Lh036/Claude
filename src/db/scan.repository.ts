@@ -84,6 +84,35 @@ export function listScansForBusiness(businessId: string): Scan[] {
   return rows.map(rowToScan);
 }
 
+export interface ScanListFilter {
+  businessId?: string;
+  status?: ScanStatus;
+  limit?: number;
+}
+
+/** Lists scans across all businesses (newest first), used by the frontend's global Scans/Runs views. */
+export function listAllScans(filter: ScanListFilter = {}): Scan[] {
+  const clauses: string[] = [];
+  const params: Record<string, unknown> = {};
+
+  if (filter.businessId) {
+    clauses.push("business_id = @businessId");
+    params.businessId = filter.businessId;
+  }
+  if (filter.status) {
+    clauses.push("status = @status");
+    params.status = filter.status;
+  }
+
+  const where = clauses.length > 0 ? `WHERE ${clauses.join(" AND ")}` : "";
+  const limit = filter.limit && filter.limit > 0 ? Math.min(filter.limit, 500) : 200;
+
+  const rows = getDb()
+    .prepare(`SELECT * FROM scans ${where} ORDER BY created_at DESC LIMIT ${limit}`)
+    .all(params) as ScanRow[];
+  return rows.map(rowToScan);
+}
+
 export function updateScan(
   id: string,
   patch: Partial<Pick<Scan, "status" | "stage" | "startedAt" | "completedAt" | "errors">>,

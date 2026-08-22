@@ -3,8 +3,9 @@
 This backend answers one question, automatically and repeatably: **how visible is
 a business in AI-generated answers, across multiple AI providers?**
 
-It is a standalone Node.js/TypeScript backend. There is no bundled dashboard —
-this is the data/API layer a dashboard would sit on top of.
+This document covers the backend (`src/`). The frontend (`frontend/`) is a
+separate Vite/React app that consumes the API described below — see
+`frontend/README.md` for its own architecture notes.
 
 ## Stack
 
@@ -257,6 +258,7 @@ curl localhost:3000/api/scans/scan_.../result   # full ScanResult once completed
 | PATCH | `/api/businesses/:id` | Update a business |
 | GET | `/api/businesses/:id/scans` | List scans for a business |
 | POST | `/api/scans` | Create + start a scan |
+| GET | `/api/scans` | List scans across all businesses (filter by `businessId`/`status`), each enriched with its `geoScore`/`statistics` |
 | GET | `/api/scans/:id` | Get scan (full row incl. status/stage/errors) |
 | GET | `/api/scans/:id/status` | Lightweight status poll |
 | GET | `/api/scans/:id/questions` | Generated questions |
@@ -266,6 +268,8 @@ curl localhost:3000/api/scans/scan_.../result   # full ScanResult once completed
 | GET | `/api/scans/:id/recommendations` | Recommendations |
 | GET | `/api/scans/:id/statistics` | Scan statistics summary |
 | GET | `/api/scans/:id/result` | Full `ScanResult` (everything above, combined) |
+| GET | `/api/logs` | Query the `logs` table — filters: `scanId`, `level`, `provider`, `event`, `q` (search), `limit`, `offset`, `order`. Powers the frontend's Logs/Errors/Activity views and the per-run timeline; there is no separate errors/runs resource. |
 
-This is the layer a dashboard would consume — no dashboard/UI is included here
-by design (out of scope for this task).
+This is the layer the frontend (`frontend/`, see `frontend/README.md`) consumes.
+CORS is open (`src/api/app.ts`) since the frontend is a separate deployable with
+no cookie-based auth to protect.

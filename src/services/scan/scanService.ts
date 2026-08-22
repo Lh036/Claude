@@ -1,4 +1,11 @@
-import { createScan as createScanRow, getScan as getScanRow, listScansForBusiness as listScansRow, getScanResults } from "../../db/scan.repository.js";
+import {
+  createScan as createScanRow,
+  getScan as getScanRow,
+  listScansForBusiness as listScansRow,
+  listAllScans as listAllScansRow,
+  getScanResults,
+  type ScanListFilter,
+} from "../../db/scan.repository.js";
 import { getQuestionsForScan } from "../../db/question.repository.js";
 import { getResponsesForScan } from "../../db/response.repository.js";
 import { getAnalysesForScan, getCompetitorsForScan } from "../../db/analysis.repository.js";
@@ -9,7 +16,7 @@ import { runScan } from "./scanOrchestrator.service.js";
 import { allSupportedProviderNames } from "../../providers/registry.js";
 import { config } from "../../config/index.js";
 import { logger } from "../../logging/logger.js";
-import type { ProviderName, Scan, ScanResult } from "../../models/types.js";
+import type { GeoScore, ProviderName, Scan, ScanResult, ScanStatistics } from "../../models/types.js";
 
 export interface CreateScanInput {
   businessId: string;
@@ -68,6 +75,25 @@ export function getScan(id: string): Scan | null {
 
 export function listScansForBusiness(businessId: string): Scan[] {
   return listScansRow(businessId);
+}
+
+/** A scan row enriched with its (possibly not-yet-computed) score/statistics, for list views. */
+export interface ScanSummary extends Scan {
+  geoScore: GeoScore | null;
+  statistics: ScanStatistics | null;
+}
+
+/**
+ * Lists scans across all businesses for the frontend's global Scans/Runs views,
+ * each enriched with its GEO score and statistics (both null until the scan
+ * reaches the scoring stage). Read-only composition over existing repositories —
+ * no new business logic.
+ */
+export function listScans(filter: ScanListFilter = {}): ScanSummary[] {
+  return listAllScansRow(filter).map((scan) => {
+    const { geoScore, statistics } = getScanResults(scan.id);
+    return { ...scan, geoScore, statistics };
+  });
 }
 
 export function getScanQuestions(id: string) {

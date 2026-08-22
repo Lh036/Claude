@@ -3,6 +3,8 @@ import { config } from "../config/index.js";
 export type LogLevel = "DEBUG" | "INFO" | "SUCCESS" | "WARNING" | "ERROR";
 
 export interface LogEntry {
+  /** Present on entries read back from storage (autoincrement row id); absent on a freshly-emitted entry. */
+  id?: number;
   timestamp: string;
   level: LogLevel;
   event: string;

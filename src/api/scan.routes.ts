@@ -10,8 +10,15 @@ import {
   getScanCompetitors,
   getScanRecommendations,
   getScanStatistics,
+  listScans,
 } from "../services/scan/scanService.js";
 import { asyncHandler } from "./errorHandler.js";
+
+const listScansQuerySchema = z.object({
+  businessId: z.string().min(1).optional(),
+  status: z.enum(["pending", "running", "completed", "failed", "partial"]).optional(),
+  limit: z.coerce.number().int().positive().max(500).optional(),
+});
 
 export const scanRouter = Router();
 
@@ -31,6 +38,14 @@ scanRouter.post(
     const input = createScanSchema.parse(req.body);
     const scan = createScan(input);
     res.status(202).json(scan);
+  }),
+);
+
+scanRouter.get(
+  "/scans",
+  asyncHandler(async (req, res) => {
+    const query = listScansQuerySchema.parse(req.query);
+    res.json(listScans(query));
   }),
 );
 
