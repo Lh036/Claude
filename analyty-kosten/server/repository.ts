@@ -1,4 +1,4 @@
-import { CATEGORY_COLORS, newId, type Db } from "./db";
+import { CATEGORY_COLORS, newId, transaction, type Db } from "./db";
 import { calculateVat } from "../shared/vat";
 import { nextDueDate } from "../shared/recurrence";
 import type { Category, CategoryInput, Expense, ExpenseFilter, ExpenseInput } from "../shared/types";
@@ -35,7 +35,7 @@ const CATEGORY_SELECT = `
   FROM categories c`;
 
 export function listCategories(db: Db): Category[] {
-  return (db.prepare(`${CATEGORY_SELECT} ORDER BY c.sort_order, c.name`).all() as CategoryRow[]).map(rowToCategory);
+  return (db.prepare(`${CATEGORY_SELECT} ORDER BY c.sort_order, c.name`).all() as unknown as CategoryRow[]).map(rowToCategory);
 }
 
 export function getCategory(db: Db, id: string): Category | null {
@@ -57,7 +57,7 @@ export function createCategory(db: Db, input: CategoryInput): Category {
   const id = newId("cat");
   db.prepare(
     `INSERT INTO categories (id, name, color, monthly_budget_cents, sort_order, created_at) VALUES (?, ?, ?, ?, ?, ?)`,
-  ).run(id, input.name, input.color ?? CATEGORY_COLORS[n % CATEGORY_COLORS.length], input.monthlyBudgetCents ?? null, maxOrder + 1, new Date().toISOString());
+  ).run(id, input.name, input.color ?? CATEGORY_COLORS[n % CATEGORY_COLORS.length]!, input.monthlyBudgetCents ?? null, maxOrder + 1, new Date().toISOString());
   return getCategory(db, id)!;
 }
 
@@ -84,10 +84,10 @@ export function deleteCategory(db: Db, id: string, reassignTo: string | null): v
     if (reassignTo === id) throw new ConflictError("Kies een andere categorie om de kosten naartoe te verplaatsen");
     if (!getCategory(db, reassignTo)) throw new NotFoundError("Doelcategorie niet gevonden");
   }
-  db.transaction(() => {
+  transaction(db, () => {
     db.prepare(`UPDATE expenses SET category_id = ? WHERE category_id = ?`).run(reassignTo, id);
     db.prepare(`DELETE FROM categories WHERE id = ?`).run(id);
-  })();
+  });
 }
 
 // --- Kosten ------------------------------------------------------------------
@@ -163,7 +163,7 @@ export function listExpenses(db: Db, filter: ExpenseFilter = {}): Expense[] {
   if (filter.type === "one-off") where.push("recurrence = 'none'");
 
   const sql = `SELECT * FROM expenses ${where.length ? `WHERE ${where.join(" AND ")}` : ""} ORDER BY date DESC, created_at DESC`;
-  return (db.prepare(sql).all(params) as ExpenseRow[]).map(rowToExpense);
+  return (db.prepare(sql).all(params) as unknown as ExpenseRow[]).map(rowToExpense);
 }
 
 export function getExpense(db: Db, id: string): Expense | null {

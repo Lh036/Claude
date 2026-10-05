@@ -5,6 +5,9 @@ verwijderen, filteren, BTW berekenen, budgetten bewaken en exporteren.
 
 ## Starten
 
+Vereist: [Node.js](https://nodejs.org) 22.13 of nieuwer. Er is verder niets te
+installeren: de database is de SQLite die in Node zelf zit.
+
 ```bash
 cd analyty-kosten
 npm install
