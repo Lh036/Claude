@@ -1058,7 +1058,7 @@ function sceneOutro(t) {
     }
     text(label, 22, 12, { size: 34, weight: 700, align: "center", color: C.ink });
     // pulsing "coming soon" dot
-    const dx = -bw / 2 + 56, dp = ((t - 28.3) * 1.2) % 1;
+    const dx = -bw / 2 + 56, dp = (((t - 28.3) * 1.2) % 1 + 1) % 1;
     ctx.beginPath(); ctx.arc(dx, 0, 9 + dp * 12, 0, Math.PI * 2);
     ctx.fillStyle = `rgba(18,18,18,${0.35 * (1 - dp)})`; ctx.fill();
     ctx.beginPath(); ctx.arc(dx, 0, 9, 0, Math.PI * 2);
