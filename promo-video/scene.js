@@ -6,25 +6,29 @@ const canvas = document.getElementById("c");
 const ctx = canvas.getContext("2d");
 
 const C = {
-  bg: "#05071a",
-  indigo: "#6366f1",
-  indigoDeep: "#4f46e5",
-  violet: "#8b5cf6",
-  cyan: "#22d3ee",
-  green: "#34d399",
-  red: "#f87171",
-  amber: "#fbbf24",
-  text: "#f8fafc",
-  muted: "#94a3b8",
-  faint: "#64748b",
-  card: "rgba(17, 22, 48, 0.78)",
-  cardHi: "rgba(30, 36, 72, 0.85)",
-  border: "rgba(148, 163, 184, 0.16)",
+  bg: "#0c0c0a",
+  ink: "#121212",
+  lime: "#c9f24e",
+  limeDeep: "#a6d12f",
+  beige: "#efe8d8",
+  indigo: "#c9f24e",
+  indigoDeep: "#a6d12f",
+  violet: "#e4f7a6",
+  cyan: "#efe8d8",
+  green: "#c9f24e",
+  red: "#ff6b57",
+  amber: "#e9d9b0",
+  text: "#f6f2e8",
+  muted: "#a9a397",
+  faint: "#757064",
+  card: "rgba(22, 22, 19, 0.82)",
+  cardHi: "rgba(32, 32, 28, 0.9)",
+  border: "rgba(239, 232, 216, 0.14)",
 };
 const PROVIDERS = [
-  { name: "ChatGPT", color: "#10b981", value: 71 },
-  { name: "Gemini", color: "#60a5fa", value: 52 },
-  { name: "Claude", color: "#f59e6b", value: 68 },
+  { name: "ChatGPT", color: "#c9f24e", value: 71 },
+  { name: "Gemini", color: "#efe8d8", value: 52 },
+  { name: "Claude", color: "#bfae86", value: 68 },
 ];
 const SANS = "Inter, system-ui, sans-serif";
 const MONO = "'JetBrains Mono', monospace";
@@ -90,7 +94,7 @@ function glassCard(x, y, w, h, r = 28, { fill = C.card, border = C.border, glow 
   const g = ctx.createLinearGradient(0, y, 0, y + h);
   g.addColorStop(0, "rgba(255,255,255,0.22)");
   g.addColorStop(0.35, border);
-  g.addColorStop(1, "rgba(148,163,184,0.06)");
+  g.addColorStop(1, "rgba(239,232,216,0.06)");
   rr(x + 0.5, y + 0.5, w - 1, h - 1, r);
   ctx.strokeStyle = g;
   ctx.lineWidth = 1.5;
@@ -105,35 +109,37 @@ function hexPath(cx, cy, r) {
   }
   ctx.closePath();
 }
-// Analyty mark: rounded indigo tile, white hexagon, center dot (matches the app favicon).
-function logo(cx, cy, size, { draw = 1, dot = 1, glow = 1 } = {}) {
-  const s = size;
+// Analyty mark: dark disc with a lime lens. `draw` opens the lens like an eye.
+function lensPath(cx, cy, r, open) {
+  // Normalised to the disc radius, traced from the 1024px source logo.
+  const k = r, sy = open;
+  const P = (x, y) => [cx + x * k, cy + y * k * sy];
+  ctx.beginPath();
+  ctx.moveTo(...P(0, -0.75));
+  ctx.bezierCurveTo(...P(-0.277, -0.75), ...P(-0.596, -0.219), ...P(-0.666, 0));
+  ctx.bezierCurveTo(...P(-0.596, 0.219), ...P(-0.277, 0.75), ...P(0, 0.75));
+  ctx.bezierCurveTo(...P(0.277, 0.75), ...P(0.596, 0.219), ...P(0.666, 0));
+  ctx.bezierCurveTo(...P(0.596, -0.219), ...P(0.277, -0.75), ...P(0, -0.75));
+  ctx.closePath();
+}
+function logo(cx, cy, size, { draw = 1, glow = 1 } = {}) {
+  const r = size / 2;
   ctx.save();
-  ctx.shadowColor = `rgba(99,102,241,${0.75 * glow})`;
-  ctx.shadowBlur = s * 0.6 * glow;
-  rr(cx - s / 2, cy - s / 2, s, s, s * 0.24);
-  const g = ctx.createLinearGradient(cx - s / 2, cy - s / 2, cx + s / 2, cy + s / 2);
-  g.addColorStop(0, "#7c7ff7");
-  g.addColorStop(0.55, C.indigoDeep);
-  g.addColorStop(1, "#6d28d9");
-  ctx.fillStyle = g;
+  ctx.shadowColor = `rgba(201,242,78,${0.45 * glow})`;
+  ctx.shadowBlur = size * 0.5 * glow;
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, Math.PI * 2);
+  ctx.fillStyle = C.ink;
   ctx.fill();
   ctx.restore();
-  // hexagon outline, drawn progressively
-  const per = 6 * s * 0.3;
-  ctx.save();
-  hexPath(cx, cy, s * 0.3);
-  ctx.lineDashOffset = 0;
-  ctx.setLineDash([per * draw, per]);
-  ctx.strokeStyle = "#fff";
-  ctx.lineWidth = s * 0.0625;
-  ctx.lineJoin = "round";
+  ctx.beginPath();
+  ctx.arc(cx, cy, r - 0.75, 0, Math.PI * 2);
+  ctx.strokeStyle = "rgba(239,232,216,0.16)";
+  ctx.lineWidth = 1.5;
   ctx.stroke();
-  ctx.restore();
-  if (dot > 0) {
-    ctx.beginPath();
-    ctx.arc(cx, cy, s * 0.094 * dot, 0, Math.PI * 2);
-    ctx.fillStyle = "#fff";
+  if (draw > 0.001) {
+    lensPath(cx, cy, r, draw);
+    ctx.fillStyle = C.lime;
     ctx.fill();
   }
 }
@@ -237,16 +243,16 @@ function background(t) {
   const danger = win(t, 10.4, 10.9, 11.6, 12.2);
   const success = win(t, 24.0, 25.5, 27.0, 28.0);
   const blobs = [
-    { x: W * 0.25 + Math.sin(t * 0.35) * 220, y: H * 0.3 + Math.cos(t * 0.27) * 120, r: 760, c: [99, 102, 241], a: 0.32 },
-    { x: W * 0.78 + Math.cos(t * 0.3) * 200, y: H * 0.65 + Math.sin(t * 0.4) * 140, r: 700, c: [139, 92, 246], a: 0.26 },
-    { x: W * 0.55 + Math.sin(t * 0.22 + 2) * 300, y: H * 0.95, r: 620, c: [34, 211, 238], a: 0.12 },
+    { x: W * 0.25 + Math.sin(t * 0.35) * 220, y: H * 0.3 + Math.cos(t * 0.27) * 120, r: 760, c: [201, 242, 78], a: 0.13 },
+    { x: W * 0.78 + Math.cos(t * 0.3) * 200, y: H * 0.65 + Math.sin(t * 0.4) * 140, r: 700, c: [239, 232, 216], a: 0.10 },
+    { x: W * 0.55 + Math.sin(t * 0.22 + 2) * 300, y: H * 0.95, r: 620, c: [166, 209, 47], a: 0.08 },
   ];
   ctx.globalCompositeOperation = "lighter";
   for (const b of blobs) {
     let [r, g, bl] = b.c;
-    r = lerp(lerp(r, 239, danger * 0.9), 52, success * 0.6);
-    g = lerp(lerp(g, 68, danger * 0.9), 211, success * 0.6);
-    bl = lerp(lerp(bl, 68, danger * 0.9), 153, success * 0.6);
+    r = lerp(lerp(r, 239, danger * 0.9), 201, success * 0.6);
+    g = lerp(lerp(g, 68, danger * 0.9), 242, success * 0.6);
+    bl = lerp(lerp(bl, 68, danger * 0.9), 78, success * 0.6);
     const grd = ctx.createRadialGradient(b.x, b.y, 0, b.x, b.y, b.r);
     grd.addColorStop(0, `rgba(${r | 0},${g | 0},${bl | 0},${b.a})`);
     grd.addColorStop(1, "rgba(0,0,0,0)");
@@ -258,7 +264,7 @@ function background(t) {
   // Perspective grid floor drifting toward camera.
   const horizon = H * 0.56;
   ctx.save();
-  ctx.strokeStyle = "rgba(129,140,248,0.10)";
+  ctx.strokeStyle = "rgba(239,232,216,0.07)";
   ctx.lineWidth = 1;
   for (let i = -24; i <= 24; i++) {
     ctx.beginPath();
@@ -279,7 +285,7 @@ function background(t) {
   ctx.restore();
   const fadeG = ctx.createLinearGradient(0, horizon - 10, 0, horizon + 260);
   fadeG.addColorStop(0, C.bg);
-  fadeG.addColorStop(1, "rgba(5,7,26,0)");
+  fadeG.addColorStop(1, "rgba(12,12,10,0)");
   ctx.fillStyle = fadeG;
   ctx.fillRect(0, horizon - 10, W, 270);
 
@@ -287,7 +293,7 @@ function background(t) {
   for (const d of DUST) {
     const y = (((d.y - t * d.s) % H) + H) % H;
     const tw = 0.35 + 0.65 * (0.5 + 0.5 * Math.sin(t * 2 + d.p));
-    ctx.fillStyle = `rgba(199,210,254,${0.35 * tw})`;
+    ctx.fillStyle = `rgba(239,232,216,${0.35 * tw})`;
     ctx.beginPath();
     ctx.arc(d.x + Math.sin(t * 0.5 + d.p) * 12, y, d.r, 0, Math.PI * 2);
     ctx.fill();
@@ -335,7 +341,7 @@ function sceneIntro(t) {
     const dist = p.d * (1 - k);
     const ang = p.a + p.spin * k * 2.5;
     const x = cx + Math.cos(ang) * dist, y = cy + Math.sin(ang) * dist * 0.75;
-    const col = p.hue < 0.6 ? "129,140,248" : p.hue < 0.85 ? "167,139,250" : "103,232,249";
+    const col = p.hue < 0.6 ? "201,242,78" : p.hue < 0.85 ? "239,232,216" : "228,247,166";
     ctx.fillStyle = `rgba(${col},${(0.5 + 0.5 * k) * seg(t, 0.1 + p.delay, 0.4 + p.delay)})`;
     ctx.beginPath();
     ctx.arc(x, y, p.r * (1.5 - k * 0.7), 0, Math.PI * 2);
@@ -345,14 +351,14 @@ function sceneIntro(t) {
   const flash = seg(t, 1.45, 1.5) * (1 - seg(t, 1.5, 2.1));
   if (flash > 0) {
     const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, 420);
-    g.addColorStop(0, `rgba(165,180,252,${0.55 * flash})`);
+    g.addColorStop(0, `rgba(220,246,140,${0.55 * flash})`);
     g.addColorStop(1, "rgba(0,0,0,0)");
     ctx.fillStyle = g;
     ctx.fillRect(0, 0, W, H);
   }
   const wave = seg(t, 1.48, 2.4);
   if (wave > 0 && wave < 1) {
-    ctx.strokeStyle = `rgba(165,180,252,${0.6 * (1 - wave)})`;
+    ctx.strokeStyle = `rgba(220,246,140,${0.6 * (1 - wave)})`;
     ctx.lineWidth = 3;
     ctx.beginPath();
     ctx.arc(cx, cy, 80 + easeOutCubic(wave) * 620, 0, Math.PI * 2);
@@ -372,7 +378,7 @@ function sceneIntro(t) {
     ctx.save();
     ctx.translate(lx, cy);
     ctx.scale(pop, pop);
-    logo(0, 0, logoSize, { draw: easeInOutCubic(seg(t, 1.5, 2.1)), dot: easeOutBack(seg(t, 1.9, 2.2)) });
+    logo(0, 0, logoSize, { draw: easeOutBack(seg(t, 1.55, 2.0)) });
     ctx.restore();
   }
   // Wordmark wipes in from behind the logo.
@@ -405,9 +411,9 @@ function promptPill(str, x, y, scale = 1) {
   const size = 26 * scale;
   const w = measure(str, size, 500) + 70 * scale;
   const h = 58 * scale;
-  glassCard(x - w / 2, y - h / 2, w, h, h / 2, { fill: "rgba(23,28,60,0.7)" });
+  glassCard(x - w / 2, y - h / 2, w, h, h / 2, { fill: "rgba(26,26,23,0.7)" });
   sparkle(x - w / 2 + 30 * scale, y, 10 * scale, C.cyan);
-  text(str, x - w / 2 + 50 * scale, y + size * 0.36, { size, weight: 500, color: "#cbd5e1" });
+  text(str, x - w / 2 + 50 * scale, y + size * 0.36, { size, weight: 500, color: "#d9d3c4" });
 }
 function sceneShift(t) {
   const a = win(t, 3.45, 3.6, 6.45, 6.85);
@@ -442,16 +448,16 @@ function sceneShift(t) {
     revealLine("Je klanten googelen niet meer.", 0, 0, 3.6, t, { size: 104, weight: 800, ls: -3 });
     ctx.restore();
   });
-  revealLine("Ze vragen het aan AI.", W / 2, H / 2 + 80, 5.05, t, { size: 136, weight: 800, ls: -4, gradient: ["#a5b4fc", "#c4b5fd", "#67e8f9"], stagger: 0.09 });
+  revealLine("Ze vragen het aan AI.", W / 2, H / 2 + 80, 5.05, t, { size: 136, weight: 800, ls: -4, gradient: ["#e4f7a6", "#e4f7a6", "#c9f24e"], stagger: 0.09 });
   ctx.restore();
 }
 
 // ---------- Scene 3: the AI answer (6.6 – 12) ----------
 const QUESTION = "Wat is de beste fysiotherapeut in Utrecht?";
 const ANSWERS = [
-  { n: "FysioPlus Centrum", r: "4,9" },
-  { n: "Utrecht Beweegt", r: "4,8" },
-  { n: "Praktijk De Brug", r: "4,7" },
+  { n: "Testbedrijf 1", r: "4,9" },
+  { n: "Testbedrijf 2", r: "4,8" },
+  { n: "Testbedrijf 3", r: "4,7" },
 ];
 function sceneChat(t) {
   const a = win(t, 6.6, 7.0, 11.55, 12.0);
@@ -469,9 +475,9 @@ function sceneChat(t) {
 
   const cw = 1180, ch = 640;
   const x = (W - cw) / 2, y = 270;
-  glassCard(x, y, cw, ch, 32, { glow: "rgba(99,102,241,0.35)" });
+  glassCard(x, y, cw, ch, 32, { glow: "rgba(201,242,78,0.35)" });
   // window chrome
-  ["#f87171", "#fbbf24", "#34d399"].forEach((c, i) => {
+  ["#ff6b57", "#e9d9b0", "#c9f24e"].forEach((c, i) => {
     ctx.fillStyle = c;
     ctx.globalAlpha = a * 0.8;
     ctx.beginPath();
@@ -493,14 +499,14 @@ function sceneChat(t) {
   withAlpha(easeOutCubic(seg(t, 6.9, 7.15)), () => {
     rr(bx, by, bw, bh, [26, 26, 8, 26]);
     const g = ctx.createLinearGradient(bx, by, bx + bw, by + bh);
-    g.addColorStop(0, C.indigoDeep);
-    g.addColorStop(1, "#7c3aed");
+    g.addColorStop(0, "#f6f2e8");
+    g.addColorStop(1, "#e3dac4");
     ctx.fillStyle = g;
     ctx.fill();
-    text(shown, bx + 32, by + 47, { size: qSize, weight: 500 });
+    text(shown, bx + 32, by + 47, { size: qSize, weight: 500, color: C.ink });
     if (typeK < 1 && Math.floor(t * 3) % 2 === 0) {
       const cx2 = bx + 32 + measure(shown, qSize, 500) + 3;
-      ctx.fillStyle = "#fff";
+      ctx.fillStyle = C.ink;
       ctx.fillRect(cx2, by + 22, 3, 34);
     }
   });
@@ -511,11 +517,11 @@ function sceneChat(t) {
     ctx.beginPath();
     ctx.arc(ax + 26, ay + 26, 26, 0, Math.PI * 2);
     const g = ctx.createLinearGradient(ax, ay, ax + 52, ay + 52);
-    g.addColorStop(0, "#22d3ee");
-    g.addColorStop(1, "#6366f1");
+    g.addColorStop(0, "#e4f7a6");
+    g.addColorStop(1, "#a6d12f");
     ctx.fillStyle = g;
     ctx.fill();
-    sparkle(ax + 26, ay + 26, 14, "#fff");
+    sparkle(ax + 26, ay + 26, 14, C.ink);
   });
   // typing dots
   const dotsA = win(t, 8.5, 8.6, 9.0, 9.1);
@@ -529,7 +535,7 @@ function sceneChat(t) {
     }
   });
   withAlpha(easeOutCubic(seg(t, 9.05, 9.35)), () => {
-    text("Dit zijn de best beoordeelde fysiotherapeuten in Utrecht:", ax + 80, ay + 36, { size: 28, weight: 500, color: "#e2e8f0" });
+    text("Dit zijn de best beoordeelde fysiotherapeuten in Utrecht:", ax + 80, ay + 36, { size: 28, weight: 500, color: "#ebe5d6" });
   });
   const scanK = seg(t, 10.0, 10.75);
   ANSWERS.forEach((item, i) => {
@@ -538,13 +544,13 @@ function sceneChat(t) {
     withAlpha(k, () => {
       const ix = ax + 80 + (1 - k) * 30;
       rr(ix, iy, 760, 60, 14);
-      ctx.fillStyle = "rgba(148,163,184,0.07)";
+      ctx.fillStyle = "rgba(239,232,216,0.07)";
       ctx.fill();
       ctx.beginPath();
       ctx.arc(ix + 32, iy + 30, 16, 0, Math.PI * 2);
-      ctx.fillStyle = "rgba(129,140,248,0.22)";
+      ctx.fillStyle = "rgba(201,242,78,0.22)";
       ctx.fill();
-      text(String(i + 1), ix + 32, iy + 38, { size: 20, weight: 700, color: "#c7d2fe", align: "center" });
+      text(String(i + 1), ix + 32, iy + 38, { size: 20, weight: 700, color: "#efe8d8", align: "center" });
       text(item.n, ix + 66, iy + 39, { size: 27, weight: 600 });
       text(`★ ${item.r}`, ix + 740, iy + 39, { size: 22, weight: 600, color: C.amber, align: "right" });
       // scanner highlight
@@ -552,9 +558,9 @@ function sceneChat(t) {
       if (local > 0 && local < 1) {
         const g = ctx.createLinearGradient(ix, 0, ix + 760, 0);
         const p = local;
-        g.addColorStop(clamp(p - 0.15), "rgba(34,211,238,0)");
-        g.addColorStop(p, "rgba(34,211,238,0.35)");
-        g.addColorStop(clamp(p + 0.02), "rgba(34,211,238,0)");
+        g.addColorStop(clamp(p - 0.15), "rgba(239,232,216,0)");
+        g.addColorStop(p, "rgba(239,232,216,0.35)");
+        g.addColorStop(clamp(p + 0.02), "rgba(239,232,216,0)");
         rr(ix, iy, 760, 60, 14);
         ctx.fillStyle = g;
         ctx.fill();
@@ -570,13 +576,13 @@ function sceneChat(t) {
     ctx.save();
     ctx.translate(bx2 + w2 / 2, by2 + 30);
     ctx.scale(nb, nb);
-    ctx.shadowColor = "rgba(248,113,113,0.6)";
+    ctx.shadowColor = "rgba(255,107,87,0.6)";
     ctx.shadowBlur = 30;
     rr(-w2 / 2, -30, w2, 60, 30);
     ctx.fillStyle = "rgba(127,29,29,0.55)";
     ctx.fill();
     ctx.shadowBlur = 0;
-    ctx.strokeStyle = "rgba(248,113,113,0.8)";
+    ctx.strokeStyle = "rgba(255,107,87,0.8)";
     ctx.lineWidth = 2;
     ctx.stroke();
     ctx.beginPath();
@@ -584,7 +590,7 @@ function sceneChat(t) {
     ctx.fillStyle = C.red;
     ctx.fill();
     cross(-w2 / 2 + 34, 0, 6, "#3f0d0d", 3.5);
-    text(label, -w2 / 2 + 62, 9, { size: 26, weight: 700, color: "#fecaca" });
+    text(label, -w2 / 2 + 62, 9, { size: 26, weight: 700, color: "#ffd2c9" });
     ctx.restore();
   }
   ctx.filter = "none";
@@ -653,13 +659,13 @@ function sceneScan(t) {
       const q = QUESTIONS[i % QUESTIONS.length];
       const pw = colW;
       rr(colX + (1 - appear) * -40, qy - 30, pw, 60, 16);
-      ctx.fillStyle = `rgba(30,36,72,${0.55 + near * 0.35})`;
+      ctx.fillStyle = `rgba(32,32,28,${0.55 + near * 0.35})`;
       ctx.fill();
-      ctx.strokeStyle = `rgba(129,140,248,${0.12 + near * 0.5})`;
+      ctx.strokeStyle = `rgba(201,242,78,${0.12 + near * 0.5})`;
       ctx.lineWidth = 1.5;
       ctx.stroke();
       text("?", colX + 28, qy + 9, { size: 24, weight: 700, color: C.cyan, align: "center", family: MONO });
-      text(q, colX + 54, qy + 9, { size: 23, weight: 500, color: near > 0.5 ? C.text : "#cbd5e1" });
+      text(q, colX + 54, qy + 9, { size: 23, weight: 500, color: near > 0.5 ? C.text : "#d9d3c4" });
     });
   }
   ctx.restore();
@@ -667,8 +673,8 @@ function sceneScan(t) {
   // Connector from column into hub
   withAlpha(seg(t, 12.6, 13.0), () => {
     const g = ctx.createLinearGradient(colX + colW, 0, hub[0], 0);
-    g.addColorStop(0, "rgba(129,140,248,0)");
-    g.addColorStop(1, "rgba(129,140,248,0.7)");
+    g.addColorStop(0, "rgba(201,242,78,0)");
+    g.addColorStop(1, "rgba(201,242,78,0.7)");
     ctx.strokeStyle = g;
     ctx.lineWidth = 2;
     ctx.beginPath();
@@ -678,7 +684,7 @@ function sceneScan(t) {
     for (let j = 0; j < 4; j++) {
       const k = ((t * 1.6 + j / 4) % 1);
       const px = lerp(colX + colW + 10, hub[0] - 80, k);
-      ctx.fillStyle = `rgba(165,180,252,${Math.sin(k * Math.PI)})`;
+      ctx.fillStyle = `rgba(220,246,140,${Math.sin(k * Math.PI)})`;
       ctx.beginPath();
       ctx.arc(px, hub[1], 4, 0, Math.PI * 2);
       ctx.fill();
@@ -691,7 +697,7 @@ function sceneScan(t) {
     const lk = easeOutCubic(seg(t, 12.7 + i * 0.12, 13.3 + i * 0.12));
     if (lk <= 0) return;
     ctx.save();
-    ctx.strokeStyle = "rgba(129,140,248,0.35)";
+    ctx.strokeStyle = "rgba(201,242,78,0.35)";
     ctx.lineWidth = 2;
     ctx.setLineDash([900 * lk, 900]);
     ctx.beginPath();
@@ -705,7 +711,7 @@ function sceneScan(t) {
       // outgoing (indigo)
       let k = ((t - 13.1) * 0.9 + j / 5 + i * 0.13) % 1;
       let [px, py] = bez(...L, k);
-      ctx.fillStyle = `rgba(165,180,252,${Math.sin(k * Math.PI)})`;
+      ctx.fillStyle = `rgba(220,246,140,${Math.sin(k * Math.PI)})`;
       ctx.beginPath(); ctx.arc(px, py, 5, 0, Math.PI * 2); ctx.fill();
       // returning (provider colour)
       k = 1 - (((t - 13.4) * 0.75 + j / 5 + i * 0.29) % 1);
@@ -726,14 +732,14 @@ function sceneScan(t) {
     ctx.save();
     ctx.translate(...hub);
     ctx.scale(hk, hk);
-    ctx.strokeStyle = "rgba(129,140,248,0.5)";
+    ctx.strokeStyle = "rgba(201,242,78,0.5)";
     ctx.lineWidth = 2;
     ctx.setLineDash([6, 12]);
     ctx.lineDashOffset = -t * 40;
     ctx.beginPath(); ctx.arc(0, 0, 96, 0, Math.PI * 2); ctx.stroke();
     ctx.setLineDash([]);
     const pulse = (t * 1.2) % 1;
-    ctx.strokeStyle = `rgba(129,140,248,${0.5 * (1 - pulse)})`;
+    ctx.strokeStyle = `rgba(201,242,78,${0.5 * (1 - pulse)})`;
     ctx.beginPath(); ctx.arc(0, 0, 70 + pulse * 70, 0, Math.PI * 2); ctx.stroke();
     logo(0, 0, 112);
     ctx.restore();
@@ -751,13 +757,13 @@ function sceneScan(t) {
       ctx.arc(cx + 50, cy - 14, 20, 0, Math.PI * 2);
       ctx.fillStyle = p.color;
       ctx.fill();
-      sparkle(cx + 50, cy - 14, 10, "rgba(255,255,255,0.9)");
+      sparkle(cx + 50, cy - 14, 10, C.ink);
       text(p.name, cx + 86, cy - 4, { size: 30, weight: 700 });
       const prog = easeInOutCubic(seg(t, 13.2 + i * 0.25, 15.9 + i * 0.2));
       const done = prog >= 1;
       text(done ? "Klaar" : "Antwoorden ophalen…", cx + w - 30, cy - 4, { size: 19, weight: 600, color: done ? C.green : C.muted, align: "right" });
       rr(cx + 30, cy + 26, w - 60, 10, 5);
-      ctx.fillStyle = "rgba(148,163,184,0.15)";
+      ctx.fillStyle = "rgba(239,232,216,0.15)";
       ctx.fill();
       if (prog > 0) {
         rr(cx + 30, cy + 26, (w - 60) * prog, 10, 5);
@@ -779,19 +785,19 @@ function sceneScan(t) {
 const RECS = [
   { t: "Voeg FAQ-schema toe aan je dienstpagina's", s: "AI-modellen citeren gestructureerde antwoorden vaker", tag: "Hoge impact", c: C.amber },
   { t: "Verzamel reviews op platforms die AI raadpleegt", s: "Concurrenten worden genoemd om hun reviewprofiel", tag: "Hoge impact", c: C.amber },
-  { t: "Publiceer een vergelijkingspagina", s: "Beantwoord “wie is de beste…” vragen zelf", tag: "Snelle winst", c: "#a5b4fc" },
+  { t: "Publiceer een vergelijkingspagina", s: "Beantwoord “wie is de beste…” vragen zelf", tag: "Snelle winst", c: "#e4f7a6" },
 ];
 const CHECKS = [24.0, 24.7, 25.4];
 function gauge(cx, cy, r, value, k, colorMix) {
   const start = Math.PI * 0.75, sweep = Math.PI * 1.5;
   ctx.lineCap = "round";
   ctx.lineWidth = 28;
-  ctx.strokeStyle = "rgba(148,163,184,0.12)";
+  ctx.strokeStyle = "rgba(239,232,216,0.12)";
   ctx.beginPath(); ctx.arc(cx, cy, r, start, start + sweep); ctx.stroke();
   // ticks
   for (let i = 0; i <= 20; i++) {
     const a = start + (sweep * i) / 20;
-    ctx.strokeStyle = "rgba(148,163,184,0.25)";
+    ctx.strokeStyle = "rgba(239,232,216,0.25)";
     ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.moveTo(cx + Math.cos(a) * (r - 34), cy + Math.sin(a) * (r - 34));
@@ -801,13 +807,13 @@ function gauge(cx, cy, r, value, k, colorMix) {
   const end = start + (sweep * value) / 100;
   if (value > 0.2) {
     const g = ctx.createConicGradient(start - 0.2, cx, cy);
-    const c1 = colorMix > 0.5 ? "#10b981" : C.indigo;
-    const c2 = colorMix > 0.5 ? "#67e8f9" : "#22d3ee";
+    const c1 = colorMix > 0.5 ? "#a6d12f" : "#8f897c";
+    const c2 = colorMix > 0.5 ? "#e4f7a6" : "#efe8d8";
     g.addColorStop(0, c1);
     g.addColorStop(0.75, c2);
     g.addColorStop(1, c1);
     ctx.save();
-    ctx.shadowColor = colorMix > 0.5 ? "rgba(52,211,153,0.7)" : "rgba(99,102,241,0.7)";
+    ctx.shadowColor = colorMix > 0.5 ? "rgba(201,242,78,0.7)" : "rgba(239,232,216,0.35)";
     ctx.shadowBlur = 30;
     ctx.strokeStyle = g;
     ctx.lineWidth = 28;
@@ -831,7 +837,7 @@ function sceneDashboard(t) {
     revealLine("Zie precies hoe zichtbaar je bent.", W / 2, 160, 17.15, t, { size: 72, weight: 800, ls: -2, stagger: 0.06 });
   });
   withAlpha(a, () => {
-    revealLine("En wat je eraan kunt doen.", W / 2, 160, 22.55, t, { size: 72, weight: 800, ls: -2, stagger: 0.06, gradient: ["#ffffff", "#a7f3d0", "#67e8f9"] });
+    revealLine("En wat je eraan kunt doen.", W / 2, 160, 22.55, t, { size: 72, weight: 800, ls: -2, stagger: 0.06, gradient: ["#ffffff", "#e4f7a6", "#c9f24e"] });
   });
 
   ctx.save();
@@ -843,7 +849,7 @@ function sceneDashboard(t) {
   if (exit > 0) ctx.filter = `blur(${exit * 10}px)`;
 
   const px = 170, py = 230, pw = 1580, ph = 740;
-  glassCard(px, py, pw, ph, 32, { glow: "rgba(99,102,241,0.28)" });
+  glassCard(px, py, pw, ph, 32, { glow: "rgba(201,242,78,0.28)" });
   // Top bar
   logo(px + 52, py + 46, 40, { glow: 0.3 });
   text("GEO-rapport", px + 88, py + 56, { size: 26, weight: 700 });
@@ -854,10 +860,10 @@ function sceneDashboard(t) {
     ctx.translate(px + pw - 130, py + 47);
     ctx.scale(pillK, pillK);
     rr(-100, -21, 200, 42, 21);
-    ctx.fillStyle = "rgba(16,185,129,0.15)";
+    ctx.fillStyle = "rgba(201,242,78,0.15)";
     ctx.fill();
     ctx.beginPath(); ctx.arc(-74, 0, 6, 0, Math.PI * 2); ctx.fillStyle = C.green; ctx.fill();
-    text("Scan voltooid", -60, 7, { size: 19, weight: 600, color: "#6ee7b7" });
+    text("Scan voltooid", -60, 7, { size: 19, weight: 600, color: "#c9f24e" });
     ctx.restore();
   }
   ctx.fillStyle = C.border;
@@ -879,13 +885,13 @@ function sceneDashboard(t) {
     ctx.save();
     ctx.translate(gcx, gcy - 108);
     ctx.scale(dk, dk);
-    ctx.shadowColor = "rgba(52,211,153,0.7)";
+    ctx.shadowColor = "rgba(201,242,78,0.7)";
     ctx.shadowBlur = 24;
     rr(-62, -24, 124, 48, 24);
-    ctx.fillStyle = "#065f46";
+    ctx.fillStyle = "#2b3510";
     ctx.fill();
     ctx.shadowBlur = 0;
-    text("▲ +23", 0, 9, { size: 24, weight: 800, color: "#6ee7b7", align: "center" });
+    text("▲ +23", 0, 9, { size: 24, weight: 800, color: "#c9f24e", align: "center" });
     ctx.restore();
   }
 
@@ -905,12 +911,12 @@ function sceneDashboard(t) {
         text(p.name, rx + 32, by + 27, { size: 25, weight: 600 });
         const bx = rx + 190, bw = rw - 300;
         rr(bx, by + 6, bw, 24, 12);
-        ctx.fillStyle = "rgba(148,163,184,0.12)";
+        ctx.fillStyle = "rgba(239,232,216,0.12)";
         ctx.fill();
         rr(bx, by + 6, bw * (p.value / 100) * k, 24, 12);
         const g = ctx.createLinearGradient(bx, 0, bx + bw, 0);
         g.addColorStop(0, p.color);
-        g.addColorStop(1, "#c7d2fe");
+        g.addColorStop(1, "#efe8d8");
         ctx.fillStyle = g;
         ctx.fill();
         text(`${Math.round(p.value * k)}%`, rx + rw, by + 28, { size: 26, weight: 700, align: "right", family: SANS });
@@ -928,7 +934,7 @@ function sceneDashboard(t) {
       const tx = rx + i * (tw + 28), ty = py + 470 + (1 - k) * 30;
       withAlpha(k, () => {
         rr(tx, ty, tw, 210, 22);
-        ctx.fillStyle = "rgba(148,163,184,0.07)";
+        ctx.fillStyle = "rgba(239,232,216,0.07)";
         ctx.fill();
         ctx.strokeStyle = C.border;
         ctx.lineWidth = 1.5;
@@ -936,7 +942,7 @@ function sceneDashboard(t) {
         text(tile.l.toUpperCase(), tx + 28, ty + 46, { size: 18, weight: 700, color: C.muted, ls: 2.5 });
         const vk = easeOutCubic(seg(t, 19.2 + i * 0.2, 20.6 + i * 0.2));
         const v = tile.l === "Gem. positie" ? lerp(9, tile.v, vk) : tile.v * vk;
-        text(tile.f(v), tx + 26, ty + 128, { size: 70, weight: 800, color: tile.warn ? "#fda4af" : C.text, ls: -2 });
+        text(tile.f(v), tx + 26, ty + 128, { size: 70, weight: 800, color: tile.warn ? "#ff8f7a" : C.text, ls: -2 });
         text(tile.s, tx + 28, ty + 172, { size: 20, weight: 500, color: C.faint });
       });
     });
@@ -958,19 +964,19 @@ function sceneDashboard(t) {
     const doneLin = seg(t, CHECKS[i], CHECKS[i] + 0.3);
     withAlpha(k, () => {
       ctx.save();
-      if (doneLin > 0) { ctx.shadowColor = `rgba(52,211,153,${0.35 * (1 - seg(t, CHECKS[i] + 0.3, CHECKS[i] + 1.2))})`; ctx.shadowBlur = 40; }
+      if (doneLin > 0) { ctx.shadowColor = `rgba(201,242,78,${0.35 * (1 - seg(t, CHECKS[i] + 0.3, CHECKS[i] + 1.2))})`; ctx.shadowBlur = 40; }
       rr(cx, cy, rw, 138, 22);
-      ctx.fillStyle = doneLin > 0 ? `rgba(16,${lerp(30, 70, doneLin) | 0},${lerp(60, 55, doneLin) | 0},0.55)` : "rgba(148,163,184,0.07)";
+      ctx.fillStyle = doneLin > 0 ? `rgba(${lerp(26, 44, doneLin) | 0},${lerp(26, 54, doneLin) | 0},${lerp(23, 18, doneLin) | 0},0.7)` : "rgba(239,232,216,0.07)";
       ctx.fill();
       ctx.restore();
       rr(cx, cy, rw, 138, 22);
-      ctx.strokeStyle = doneLin > 0 ? `rgba(52,211,153,${0.2 + 0.4 * doneLin})` : C.border;
+      ctx.strokeStyle = doneLin > 0 ? `rgba(201,242,78,${0.2 + 0.4 * doneLin})` : C.border;
       ctx.lineWidth = 1.5;
       ctx.stroke();
       // checkbox
       const bx = cx + 54, by = cy + 69;
       ctx.beginPath(); ctx.arc(bx, by, 22, 0, Math.PI * 2);
-      ctx.strokeStyle = "rgba(148,163,184,0.45)"; ctx.lineWidth = 2.5; ctx.stroke();
+      ctx.strokeStyle = "rgba(239,232,216,0.45)"; ctx.lineWidth = 2.5; ctx.stroke();
       if (done > 0) {
         ctx.save();
         ctx.translate(bx, by);
@@ -978,11 +984,11 @@ function sceneDashboard(t) {
         ctx.beginPath(); ctx.arc(0, 0, 23, 0, Math.PI * 2);
         ctx.fillStyle = C.green; ctx.fill();
         ctx.restore();
-        check(bx, by, 18, seg(t, CHECKS[i] + 0.08, CHECKS[i] + 0.32), "#052e1f", 4.5);
+        check(bx, by, 18, seg(t, CHECKS[i] + 0.08, CHECKS[i] + 0.32), "#121212", 4.5);
       }
       const tw2 = measure(r.tag.toUpperCase(), 15, 700, 1.5) + 28;
       rr(cx + 100, cy + 20, tw2, 30, 15);
-      ctx.fillStyle = r.c === C.amber ? "rgba(251,191,36,0.14)" : "rgba(129,140,248,0.16)";
+      ctx.fillStyle = r.c === C.amber ? "rgba(233,217,176,0.14)" : "rgba(201,242,78,0.16)";
       ctx.fill();
       text(r.tag.toUpperCase(), cx + 100 + tw2 / 2, cy + 40, { size: 15, weight: 700, color: r.c, align: "center", ls: 1.5 });
       text(r.t, cx + 100, cy + 87, { size: 27, weight: 700 });
@@ -1003,7 +1009,7 @@ function sceneOutro(t) {
   if (wv > 0 && wv < 1) {
     ctx.save();
     ctx.globalCompositeOperation = "lighter";
-    ctx.strokeStyle = `rgba(165,180,252,${0.55 * (1 - wv)})`;
+    ctx.strokeStyle = `rgba(220,246,140,${0.55 * (1 - wv)})`;
     ctx.lineWidth = 3;
     ctx.beginPath(); ctx.arc(cx, 330, 70 + easeOutCubic(wv) * 900, 0, Math.PI * 2); ctx.stroke();
     ctx.restore();
@@ -1016,7 +1022,7 @@ function sceneOutro(t) {
     logo(0, 0, 150, { glow: glowPulse });
     ctx.restore();
   }
-  revealLine("Word gevonden door AI.", cx, 560, 27.3, t, { size: 112, weight: 800, ls: -4, stagger: 0.08, gradient: ["#ffffff", "#ffffff", "#c7d2fe", "#67e8f9"] });
+  revealLine("Word gevonden door AI.", cx, 560, 27.3, t, { size: 112, weight: 800, ls: -4, stagger: 0.08, gradient: ["#ffffff", "#ffffff", "#efe8d8", "#c9f24e"] });
 
   const bk = easeOutBack(seg(t, 27.9, 28.35));
   if (bk > 0) {
@@ -1026,12 +1032,12 @@ function sceneOutro(t) {
     ctx.translate(cx, 700);
     ctx.scale(bk, bk);
     const pulse = 0.5 + 0.5 * Math.sin((t - 28.3) * 4);
-    ctx.shadowColor = `rgba(99,102,241,${0.55 + 0.3 * pulse})`;
+    ctx.shadowColor = `rgba(201,242,78,${0.55 + 0.3 * pulse})`;
     ctx.shadowBlur = 50 + 20 * pulse;
     rr(-bw / 2, -bh / 2, bw, bh, bh / 2);
     const g = ctx.createLinearGradient(-bw / 2, 0, bw / 2, 0);
-    g.addColorStop(0, "#6366f1");
-    g.addColorStop(1, "#8b5cf6");
+    g.addColorStop(0, "#d4f76a");
+    g.addColorStop(1, "#b8e23c");
     ctx.fillStyle = g;
     ctx.fill();
     ctx.shadowBlur = 0;
@@ -1050,10 +1056,10 @@ function sceneOutro(t) {
       ctx.fillRect(-bw / 2, -bh / 2, bw, bh);
       ctx.restore();
     }
-    text(label, -24, 12, { size: 34, weight: 700, align: "center" });
+    text(label, -24, 12, { size: 34, weight: 700, align: "center", color: C.ink });
     // arrow
     const ax = bw / 2 - 62 + Math.sin(t * 5) * 4;
-    ctx.strokeStyle = "#fff";
+    ctx.strokeStyle = C.ink;
     ctx.lineWidth = 4;
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
@@ -1064,7 +1070,7 @@ function sceneOutro(t) {
     ctx.restore();
   }
   withAlpha(easeOutCubic(seg(t, 28.3, 28.8)), () => {
-    text("analyty.com", cx, 828 + (1 - easeOutCubic(seg(t, 28.3, 28.8))) * 16, { size: 38, weight: 600, color: "#c7d2fe", align: "center", ls: 3 });
+    text("analyty.com", cx, 828 + (1 - easeOutCubic(seg(t, 28.3, 28.8))) * 16, { size: 38, weight: 600, color: "#efe8d8", align: "center", ls: 3 });
   });
 }
 
