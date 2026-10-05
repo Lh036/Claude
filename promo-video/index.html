@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Analyty Promo</title>
+<style>
+  @font-face { font-family: "Inter"; src: url("fonts/Inter.woff2") format("woff2"); font-weight: 100 900; }
+  @font-face { font-family: "JetBrains Mono"; src: url("fonts/JetBrainsMono.woff2") format("woff2"); font-weight: 500; }
+  html, body { margin: 0; height: 100%; background: #000; }
+  body { display: grid; place-items: center; overflow: hidden; }
+  canvas { width: 100vw; height: 56.25vw; max-height: 100vh; max-width: 177.78vh; display: block; }
+  #hint { position: fixed; bottom: 12px; left: 0; right: 0; text-align: center; color: #64748b;
+          font: 13px Inter, sans-serif; pointer-events: none; }
+  body.render #hint { display: none; }
+</style>
+</head>
+<body>
+<canvas id="c" width="1920" height="1080"></canvas>
+<div id="hint">Klik om af te spelen met geluid · spatie = pauze</div>
+<script src="scene.js"></script>
+</body>
+</html>
