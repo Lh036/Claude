@@ -14,7 +14,7 @@ Result: [`analyty-promo.mp4`](analyty-promo.mp4)
 | 12–17s | Analyty sends hundreds of questions to ChatGPT, Gemini and Claude |
 | 17–22.5s | GEO report: score, visibility per AI model, KPIs |
 | 22.5–27s | Recommendations are ticked off, score rises 64 → 87 |
-| 27–30s | "Word gevonden door AI." + CTA "Start je gratis AI-scan" · analyty.com |
+| 27–30s | "Word gevonden door AI." + "Live vanaf medio oktober" · analyty.com |
 
 ## Rebuilding
 

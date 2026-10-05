@@ -1026,7 +1026,7 @@ function sceneOutro(t) {
 
   const bk = easeOutBack(seg(t, 27.9, 28.35));
   if (bk > 0) {
-    const label = "Start je gratis AI-scan";
+    const label = "Live vanaf medio oktober";
     const bw = measure(label, 34, 700) + 150, bh = 92;
     ctx.save();
     ctx.translate(cx, 700);
@@ -1056,17 +1056,13 @@ function sceneOutro(t) {
       ctx.fillRect(-bw / 2, -bh / 2, bw, bh);
       ctx.restore();
     }
-    text(label, -24, 12, { size: 34, weight: 700, align: "center", color: C.ink });
-    // arrow
-    const ax = bw / 2 - 62 + Math.sin(t * 5) * 4;
-    ctx.strokeStyle = C.ink;
-    ctx.lineWidth = 4;
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
-    ctx.beginPath();
-    ctx.moveTo(ax - 14, 0); ctx.lineTo(ax + 12, 0);
-    ctx.moveTo(ax + 2, -10); ctx.lineTo(ax + 12, 0); ctx.lineTo(ax + 2, 10);
-    ctx.stroke();
+    text(label, 22, 12, { size: 34, weight: 700, align: "center", color: C.ink });
+    // pulsing "coming soon" dot
+    const dx = -bw / 2 + 56, dp = ((t - 28.3) * 1.2) % 1;
+    ctx.beginPath(); ctx.arc(dx, 0, 9 + dp * 12, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(18,18,18,${0.35 * (1 - dp)})`; ctx.fill();
+    ctx.beginPath(); ctx.arc(dx, 0, 9, 0, Math.PI * 2);
+    ctx.fillStyle = C.ink; ctx.fill();
     ctx.restore();
   }
   withAlpha(easeOutCubic(seg(t, 28.3, 28.8)), () => {
