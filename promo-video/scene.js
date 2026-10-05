@@ -1,8 +1,12 @@
-// Analyty promo — 30s, 1920x1080. Everything is drawn procedurally on one canvas.
-// renderAt(t) is a pure function of time so frames can be rendered deterministically.
+// Analyty promo — 30s, 1920x1080 (or 1080x1920 with ?portrait). Everything is drawn
+// procedurally on one canvas. renderAt(t) is a pure function of time so frames can be
+// rendered deterministically.
 
-const W = 1920, H = 1080, DURATION = 30;
+const PORTRAIT = new URLSearchParams(location.search).has("portrait");
+const W = PORTRAIT ? 1080 : 1920, H = PORTRAIT ? 1920 : 1080, DURATION = 30;
 const canvas = document.getElementById("c");
+canvas.width = W;
+canvas.height = H;
 const ctx = canvas.getContext("2d");
 
 const C = {
@@ -216,6 +220,16 @@ function revealLine(str, cx, y, t0, t, { size = 80, weight = 700, color = C.text
   return total;
 }
 
+// Several lines, each revealed word by word; the stagger carries on across lines.
+function revealLines(lines, cx, y, lineH, t0, t, opts = {}) {
+  const stagger = opts.stagger ?? 0.07;
+  let start = t0;
+  lines.forEach((line, i) => {
+    revealLine(line, cx, y + i * lineH, start, t, opts);
+    start += line.split(" ").length * stagger;
+  });
+}
+
 // ---------- shared assets ----------
 const R = rng(7);
 const DUST = Array.from({ length: 140 }, () => ({ x: R() * W, y: R() * H, r: 0.6 + R() * 1.8, s: 6 + R() * 22, p: R() * 6.28 }));
@@ -399,7 +413,14 @@ function sceneIntro(t) {
 }
 
 // ---------- Scene 2: the shift (3.5 – 6.8) ----------
-const PROMPTS = [
+const PROMPTS = PORTRAIT ? [
+  { s: "Beste advocaat in Amsterdam?", x: 330, y: 430, d: 0.55 },
+  { s: "Welke loodgieter is snel?", x: 760, y: 560, d: 0.75 },
+  { s: "Goede tandarts in de buurt?", x: 320, y: 1390, d: 0.85 },
+  { s: "Welk CRM past bij ons?", x: 770, y: 1520, d: 0.65 },
+  { s: "Leukste restaurant in Utrecht?", x: 700, y: 330, d: 0.45 },
+  { s: "Betrouwbare accountant mkb?", x: 400, y: 1640, d: 0.5 },
+] : [
   { s: "Beste advocaat in Amsterdam?", x: 260, y: 230, d: 0.55 },
   { s: "Welke loodgieter is snel?", x: 1500, y: 200, d: 0.75 },
   { s: "Goede tandarts in de buurt?", x: 220, y: 860, d: 0.85 },
@@ -440,15 +461,18 @@ function sceneShift(t) {
 
   const move = easeInOutCubic(seg(t, 4.85, 5.35));
   withAlpha(1 - move * 0.6, () => {
-    const y = lerp(H / 2 + 30, H / 2 - 70, move);
+    const y = PORTRAIT ? lerp(H / 2 - 20, H / 2 - 250, move) : lerp(H / 2 + 30, H / 2 - 70, move);
     const s = lerp(1, 0.62, move);
     ctx.save();
     ctx.translate(W / 2, y);
     ctx.scale(s, s);
-    revealLine("Je klanten googelen niet meer.", 0, 0, 3.6, t, { size: 104, weight: 800, ls: -3 });
+    if (PORTRAIT) revealLines(["Je klanten googelen", "niet meer."], 0, 0, 104, 3.6, t, { size: 92, weight: 800, ls: -3 });
+    else revealLine("Je klanten googelen niet meer.", 0, 0, 3.6, t, { size: 104, weight: 800, ls: -3 });
     ctx.restore();
   });
-  revealLine("Ze vragen het aan AI.", W / 2, H / 2 + 80, 5.05, t, { size: 136, weight: 800, ls: -4, gradient: ["#e4f7a6", "#e4f7a6", "#c9f24e"], stagger: 0.09 });
+  const aiOpts = { size: 136, weight: 800, ls: -4, gradient: ["#e4f7a6", "#e4f7a6", "#c9f24e"], stagger: 0.09 };
+  if (PORTRAIT) revealLines(["Ze vragen het", "aan AI."], W / 2, H / 2 + 20, 150, 5.05, t, { ...aiOpts, size: 132 });
+  else revealLine("Ze vragen het aan AI.", W / 2, H / 2 + 80, 5.05, t, aiOpts);
   ctx.restore();
 }
 
@@ -471,6 +495,12 @@ function sceneChat(t) {
   const s = lerp(0.82, 1, enter) + push - exit * 0.12;
   ctx.scale(s, s);
   ctx.translate(-W / 2, -H / 2 - 40);
+  if (PORTRAIT) {
+    // Same card, scaled to fit the narrow frame and centred below the heading.
+    ctx.translate(W / 2, 1110);
+    ctx.scale(0.8, 0.8);
+    ctx.translate(-W / 2, -590);
+  }
   if (exit > 0) ctx.filter = `blur(${exit * 12}px)`;
 
   const cw = 1180, ch = 640;
@@ -598,7 +628,8 @@ function sceneChat(t) {
 
   // Heading above the card
   withAlpha(a, () => {
-    revealLine("Wordt jouw bedrijf genoemd?", W / 2, 180, 9.85, t, { size: 76, weight: 800, ls: -2 });
+    if (PORTRAIT) revealLines(["Wordt jouw bedrijf", "genoemd?"], W / 2, 600, 104, 9.85, t, { size: 92, weight: 800, ls: -2 });
+    else revealLine("Wordt jouw bedrijf genoemd?", W / 2, 180, 9.85, t, { size: 76, weight: 800, ls: -2 });
   });
 }
 
@@ -633,17 +664,21 @@ function sceneScan(t) {
   ctx.scale(s, s);
   ctx.translate(-W / 2, -H / 2);
 
-  revealLine("Analyty stelt honderden echte klantvragen", W / 2, 150, 12.1, t, { size: 64, weight: 800, ls: -2, stagger: 0.05 });
+  if (PORTRAIT) revealLines(["Analyty stelt honderden", "echte klantvragen"], W / 2, 330, 88, 12.1, t, { size: 76, weight: 800, ls: -2, stagger: 0.05 });
+  else revealLine("Analyty stelt honderden echte klantvragen", W / 2, 150, 12.1, t, { size: 64, weight: 800, ls: -2, stagger: 0.05 });
   withAlpha(easeOutCubic(seg(t, 12.55, 13.0)), () => {
-    text("aan ChatGPT, Gemini en Claude. Automatisch.", W / 2, 212, { size: 32, weight: 500, color: C.muted, align: "center" });
+    text("aan ChatGPT, Gemini en Claude. Automatisch.", W / 2, PORTRAIT ? 490 : 212, { size: 32, weight: 500, color: C.muted, align: "center" });
   });
 
-  const hub = [880, 560];
+  // Landscape: questions -> hub -> providers left to right. Portrait: top to bottom.
+  const hub = PORTRAIT ? [540, 1010] : [880, 560];
   const provY = [380, 560, 740];
   const provX = 1330;
+  const provPX = [200, 540, 880], provPY = 1230, provPW = 300, provPH = 170;
 
   // Question column (scrolling)
-  const colX = 150, colW = 470, top = 280, bottom = 850;
+  const colX = PORTRAIT ? 160 : 150, colW = PORTRAIT ? 760 : 470, top = PORTRAIT ? 560 : 280, bottom = PORTRAIT ? 870 : 850;
+  const focusY = PORTRAIT ? bottom - 70 : hub[1];
   const scroll = (t - 12) * 95;
   ctx.save();
   ctx.beginPath();
@@ -654,7 +689,7 @@ function sceneScan(t) {
     if (qy < top - 60 || qy > bottom + 60) continue;
     const appear = easeOutCubic(seg(t, 12.25 + i * 0.05, 12.8 + i * 0.05));
     const edge = Math.min(seg(qy, top - 20, top + 90), 1 - seg(qy, bottom - 90, bottom + 20));
-    const near = 1 - clamp(Math.abs(qy - hub[1]) / 220);
+    const near = 1 - clamp(Math.abs(qy - focusY) / (PORTRAIT ? 120 : 220));
     withAlpha(appear * edge, () => {
       const q = QUESTIONS[i % QUESTIONS.length];
       const pw = colW;
@@ -672,27 +707,30 @@ function sceneScan(t) {
 
   // Connector from column into hub
   withAlpha(seg(t, 12.6, 13.0), () => {
-    const g = ctx.createLinearGradient(colX + colW, 0, hub[0], 0);
+    const from = PORTRAIT ? [hub[0], bottom + 10] : [colX + colW + 10, hub[1]];
+    const to = PORTRAIT ? [hub[0], hub[1] - 80] : [hub[0] - 80, hub[1]];
+    const g = ctx.createLinearGradient(...from, ...to);
     g.addColorStop(0, "rgba(201,242,78,0)");
     g.addColorStop(1, "rgba(201,242,78,0.7)");
     ctx.strokeStyle = g;
     ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.moveTo(colX + colW + 10, hub[1]);
-    ctx.lineTo(hub[0] - 80, hub[1]);
+    ctx.moveTo(...from);
+    ctx.lineTo(...to);
     ctx.stroke();
     for (let j = 0; j < 4; j++) {
       const k = ((t * 1.6 + j / 4) % 1);
-      const px = lerp(colX + colW + 10, hub[0] - 80, k);
       ctx.fillStyle = `rgba(220,246,140,${Math.sin(k * Math.PI)})`;
       ctx.beginPath();
-      ctx.arc(px, hub[1], 4, 0, Math.PI * 2);
+      ctx.arc(lerp(from[0], to[0], k), lerp(from[1], to[1], k), 4, 0, Math.PI * 2);
       ctx.fill();
     }
   });
 
   // Curves hub -> providers with travelling pulses
-  const links = provY.map((py) => [[hub[0] + 70, hub[1]], [hub[0] + 260, hub[1]], [provX - 220, py], [provX - 10, py]]);
+  const links = PORTRAIT
+    ? provPX.map((px) => [[hub[0], hub[1] + 70], [hub[0], hub[1] + 170], [px, provPY - 120], [px, provPY - 6]])
+    : provY.map((py) => [[hub[0] + 70, hub[1]], [hub[0] + 260, hub[1]], [provX - 220, py], [provX - 10, py]]);
   links.forEach((L, i) => {
     const lk = easeOutCubic(seg(t, 12.7 + i * 0.12, 13.3 + i * 0.12));
     if (lk <= 0) return;
@@ -749,6 +787,31 @@ function sceneScan(t) {
   PROVIDERS.forEach((p, i) => {
     const k = easeOutCubic(seg(t, 12.8 + i * 0.12, 13.3 + i * 0.12));
     if (k <= 0) return;
+    if (PORTRAIT) {
+      const w = provPW, h = provPH, x = provPX[i] - w / 2, y = provPY + (1 - k) * 60;
+      withAlpha(k, () => {
+        glassCard(x, y, w, h, 24, { fill: C.cardHi });
+        ctx.beginPath();
+        ctx.arc(x + 46, y + 50, 20, 0, Math.PI * 2);
+        ctx.fillStyle = p.color;
+        ctx.fill();
+        sparkle(x + 46, y + 50, 10, C.ink);
+        text(p.name, x + 80, y + 61, { size: 30, weight: 700 });
+        const prog = easeInOutCubic(seg(t, 13.2 + i * 0.25, 15.9 + i * 0.2));
+        const done = prog >= 1;
+        text(done ? "Klaar" : "Ophalen…", x + 28, y + 112, { size: 22, weight: 600, color: done ? C.green : C.muted });
+        text(`${Math.round(prog * 248)}`, x + w - 28, y + 112, { size: 22, weight: 600, color: C.faint, align: "right" });
+        rr(x + 28, y + 132, w - 56, 10, 5);
+        ctx.fillStyle = "rgba(239,232,216,0.15)";
+        ctx.fill();
+        if (prog > 0) {
+          rr(x + 28, y + 132, (w - 56) * prog, 10, 5);
+          ctx.fillStyle = p.color;
+          ctx.fill();
+        }
+      });
+      return;
+    }
     const cx = provX + (1 - k) * 60, cy = provY[i];
     const w = 500, h = 128;
     withAlpha(k, () => {
@@ -775,9 +838,10 @@ function sceneScan(t) {
 
   // Counters
   const ck = seg(t, 13.0, 16.2);
-  counter("klantvragen", 248, 560, 950, ck);
-  counter("AI-modellen", 3, 960, 950, seg(t, 13.0, 13.6));
-  counter("antwoorden geanalyseerd", 744, 1360, 950, ck);
+  const cX = PORTRAIT ? [200, 540, 880] : [560, 960, 1360], cY = PORTRAIT ? 1560 : 950;
+  counter("klantvragen", 248, cX[0], cY, ck);
+  counter("AI-modellen", 3, cX[1], cY, seg(t, 13.0, 13.6));
+  counter(PORTRAIT ? "antwoorden" : "antwoorden geanalyseerd", 744, cX[2], cY, ck);
   ctx.restore();
 }
 
@@ -834,10 +898,14 @@ function sceneDashboard(t) {
 
   // Headings
   withAlpha(a * (1 - seg(t, 22.3, 22.6)), () => {
-    revealLine("Zie precies hoe zichtbaar je bent.", W / 2, 160, 17.15, t, { size: 72, weight: 800, ls: -2, stagger: 0.06 });
+    const o = { size: 72, weight: 800, ls: -2, stagger: 0.06 };
+    if (PORTRAIT) revealLines(["Zie precies hoe", "zichtbaar je bent."], W / 2, 300, 92, 17.15, t, { ...o, size: 80 });
+    else revealLine("Zie precies hoe zichtbaar je bent.", W / 2, 160, 17.15, t, o);
   });
   withAlpha(a, () => {
-    revealLine("En wat je eraan kunt doen.", W / 2, 160, 22.55, t, { size: 72, weight: 800, ls: -2, stagger: 0.06, gradient: ["#ffffff", "#e4f7a6", "#c9f24e"] });
+    const o = { size: 72, weight: 800, ls: -2, stagger: 0.06, gradient: ["#ffffff", "#e4f7a6", "#c9f24e"] };
+    if (PORTRAIT) revealLines(["En wat je eraan", "kunt doen."], W / 2, 300, 92, 22.55, t, { ...o, size: 80 });
+    else revealLine("En wat je eraan kunt doen.", W / 2, 160, 22.55, t, o);
   });
 
   ctx.save();
@@ -848,12 +916,14 @@ function sceneDashboard(t) {
   ctx.translate(-W / 2, -H / 2 - 60 + (1 - enter) * 60);
   if (exit > 0) ctx.filter = `blur(${exit * 10}px)`;
 
-  const px = 170, py = 230, pw = 1580, ph = 740;
+  // Portrait stacks the gauge above the details; `oy` shifts the details section down.
+  const px = PORTRAIT ? 40 : 170, py = PORTRAIT ? 520 : 230, pw = PORTRAIT ? 1000 : 1580, ph = PORTRAIT ? 1130 : 740;
+  const oy = PORTRAIT ? 420 : 0;
   glassCard(px, py, pw, ph, 32, { glow: "rgba(201,242,78,0.28)" });
   // Top bar
   logo(px + 52, py + 46, 40, { glow: 0.3 });
   text("GEO-rapport", px + 88, py + 56, { size: 26, weight: 700 });
-  text("·  Jouw bedrijf  ·  Fysiotherapie, Utrecht", px + 100 + measure("GEO-rapport", 26, 700), py + 56, { size: 22, weight: 500, color: C.muted });
+  text(PORTRAIT ? "·  Jouw bedrijf" : "·  Jouw bedrijf  ·  Fysiotherapie, Utrecht", px + 100 + measure("GEO-rapport", 26, 700), py + 56, { size: 22, weight: 500, color: C.muted });
   const pillK = easeOutBack(seg(t, 17.6, 17.95));
   if (pillK > 0) {
     ctx.save();
@@ -868,18 +938,19 @@ function sceneDashboard(t) {
   }
   ctx.fillStyle = C.border;
   ctx.fillRect(px, py + 92, pw, 1);
-  ctx.fillRect(px + 600, py + 92, 1, ph - 92);
+  if (PORTRAIT) ctx.fillRect(px, py + 520, pw, 1);
+  else ctx.fillRect(px + 600, py + 92, 1, ph - 92);
 
   // Gauge with score
   const g1 = easeOutCubic(seg(t, 17.5, 19.3)) * 64;
   const steps = CHECKS.map((c, i) => easeOutCubic(seg(t, c + 0.1, c + 0.7)) * [8, 8, 7][i]);
   const score = g1 + steps.reduce((x, y) => x + y, 0);
   const green = seg(t, 24.0, 25.8);
-  const gcx = px + 300, gcy = py + 400;
-  gauge(gcx, gcy, 200, score, 1, green);
+  const gcx = PORTRAIT ? W / 2 : px + 300, gcy = PORTRAIT ? py + 300 : py + 400;
+  gauge(gcx, gcy, PORTRAIT ? 175 : 200, score, 1, green);
   text(String(Math.round(score)), gcx, gcy + 40, { size: 128, weight: 800, align: "center", ls: -4 });
   text("/ 100", gcx, gcy + 86, { size: 24, weight: 600, color: C.muted, align: "center" });
-  text("GEO-SCORE", gcx, gcy + 210, { size: 22, weight: 700, color: C.muted, align: "center", ls: 5 });
+  text("GEO-SCORE", gcx, gcy + (PORTRAIT ? 190 : 210), { size: 22, weight: 700, color: C.muted, align: "center", ls: 5 });
   const dk = easeOutBack(seg(t, 26.0, 26.35));
   if (dk > 0) {
     ctx.save();
@@ -895,17 +966,17 @@ function sceneDashboard(t) {
     ctx.restore();
   }
 
-  const rx = px + 660, rw = pw - 720;
+  const rx = PORTRAIT ? px + 50 : px + 660, rw = PORTRAIT ? pw - 100 : pw - 720;
   // Phase A: provider bars + KPI tiles
   const outA = easeInCubic(seg(t, 22.2, 22.7));
   withAlpha(1 - outA, () => {
     ctx.save();
     ctx.translate(-outA * 80, 0);
-    text("Zichtbaarheid per AI-model", rx, py + 160, { size: 26, weight: 700 });
-    text("% van de antwoorden waarin je genoemd wordt", rx + rw, py + 160, { size: 20, weight: 500, color: C.faint, align: "right" });
+    text("Zichtbaarheid per AI-model", rx, py + oy + 160, { size: 26, weight: 700 });
+    text("% van de antwoorden waarin je genoemd wordt", rx + rw, py + oy + 160, { size: 20, weight: 500, color: C.faint, align: "right" });
     PROVIDERS.forEach((p, i) => {
       const k = easeOutCubic(seg(t, 17.9 + i * 0.18, 19.4 + i * 0.18));
-      const by = py + 210 + i * 78;
+      const by = py + oy + 210 + i * 78;
       withAlpha(clamp(k * 3), () => {
         ctx.beginPath(); ctx.arc(rx + 10, by + 18, 9, 0, Math.PI * 2); ctx.fillStyle = p.color; ctx.fill();
         text(p.name, rx + 32, by + 27, { size: 25, weight: 600 });
@@ -931,7 +1002,7 @@ function sceneDashboard(t) {
     tiles.forEach((tile, i) => {
       const k = easeOutCubic(seg(t, 19.0 + i * 0.2, 19.8 + i * 0.2));
       if (k <= 0) return;
-      const tx = rx + i * (tw + 28), ty = py + 470 + (1 - k) * 30;
+      const tx = rx + i * (tw + 28), ty = py + oy + 470 + (1 - k) * 30;
       withAlpha(k, () => {
         rr(tx, ty, tw, 210, 22);
         ctx.fillStyle = "rgba(239,232,216,0.07)";
@@ -952,13 +1023,13 @@ function sceneDashboard(t) {
   // Phase B: recommendations
   const inB = easeOutCubic(seg(t, 22.6, 23.2));
   withAlpha(inB, () => {
-    text("Aanbevelingen", rx + (1 - inB) * 60, py + 160, { size: 26, weight: 700 });
-    text("op basis van 744 AI-antwoorden", rx + rw, py + 160, { size: 20, weight: 500, color: C.faint, align: "right" });
+    text("Aanbevelingen", rx + (1 - inB) * 60, py + oy + 160, { size: 26, weight: 700 });
+    text("op basis van 744 AI-antwoorden", rx + rw, py + oy + 160, { size: 20, weight: 500, color: C.faint, align: "right" });
   });
   RECS.forEach((r, i) => {
     const k = easeOutExpo(seg(t, 22.75 + i * 0.15, 23.5 + i * 0.15));
     if (k <= 0) return;
-    const cy = py + 200 + i * 162;
+    const cy = py + oy + 200 + i * 162;
     const cx = rx + (1 - k) * 120;
     const done = easeOutBack(seg(t, CHECKS[i], CHECKS[i] + 0.3));
     const doneLin = seg(t, CHECKS[i], CHECKS[i] + 0.3);
@@ -1003,6 +1074,7 @@ function sceneDashboard(t) {
 function sceneOutro(t) {
   if (t < 26.95) return;
   const cx = W / 2;
+  const LY = PORTRAIT ? 620 : 330, BY = PORTRAIT ? 1250 : 700, DY = PORTRAIT ? 1390 : 828;
   const lk = easeOutBack(seg(t, 27.05, 27.5));
   // shockwave
   const wv = seg(t, 27.1, 28.2);
@@ -1011,25 +1083,29 @@ function sceneOutro(t) {
     ctx.globalCompositeOperation = "lighter";
     ctx.strokeStyle = `rgba(220,246,140,${0.55 * (1 - wv)})`;
     ctx.lineWidth = 3;
-    ctx.beginPath(); ctx.arc(cx, 330, 70 + easeOutCubic(wv) * 900, 0, Math.PI * 2); ctx.stroke();
+    ctx.beginPath(); ctx.arc(cx, LY, 70 + easeOutCubic(wv) * 900, 0, Math.PI * 2); ctx.stroke();
     ctx.restore();
   }
   if (lk > 0) {
     ctx.save();
-    ctx.translate(cx, 330);
+    ctx.translate(cx, LY);
     ctx.scale(lk, lk);
     const glowPulse = 1 + Math.sin(t * 3) * 0.15;
-    logo(0, 0, 150, { glow: glowPulse });
+    logo(0, 0, PORTRAIT ? 190 : 150, { glow: glowPulse });
     ctx.restore();
   }
-  revealLine("Word gevonden door AI.", cx, 560, 27.3, t, { size: 112, weight: 800, ls: -4, stagger: 0.08, gradient: ["#ffffff", "#ffffff", "#efe8d8", "#c9f24e"] });
+  const ho = { size: 112, weight: 800, ls: -4, stagger: 0.08, gradient: ["#ffffff", "#ffffff", "#efe8d8", "#c9f24e"] };
+  if (PORTRAIT) {
+    revealLine("Word gevonden", cx, 920, 27.3, t, { ...ho, size: 132, gradient: null, color: "#ffffff" });
+    revealLine("door AI.", cx, 1070, 27.46, t, { ...ho, size: 132, gradient: ["#efe8d8", "#c9f24e"] });
+  } else revealLine("Word gevonden door AI.", cx, 560, 27.3, t, ho);
 
   const bk = easeOutBack(seg(t, 27.9, 28.35));
   if (bk > 0) {
     const label = "Live vanaf medio oktober";
     const bw = measure(label, 34, 700) + 150, bh = 92;
     ctx.save();
-    ctx.translate(cx, 700);
+    ctx.translate(cx, BY);
     ctx.scale(bk, bk);
     const pulse = 0.5 + 0.5 * Math.sin((t - 28.3) * 4);
     ctx.shadowColor = `rgba(201,242,78,${0.55 + 0.3 * pulse})`;
@@ -1066,7 +1142,7 @@ function sceneOutro(t) {
     ctx.restore();
   }
   withAlpha(easeOutCubic(seg(t, 28.3, 28.8)), () => {
-    text("analyty.com", cx, 828 + (1 - easeOutCubic(seg(t, 28.3, 28.8))) * 16, { size: 38, weight: 600, color: "#efe8d8", align: "center", ls: 3 });
+    text("analyty.com", cx, DY + (1 - easeOutCubic(seg(t, 28.3, 28.8))) * 16, { size: 38, weight: 600, color: "#efe8d8", align: "center", ls: 3 });
   });
 }
 

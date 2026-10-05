@@ -4,7 +4,10 @@
 no stock footage or images. Every frame is drawn on a canvas
 (`scene.js`) and the music is synthesised in Python (`music.py`).
 
-Result: [`analyty-promo.mp4`](analyty-promo.mp4)
+Results:
+
+- [`analyty-promo.mp4`](analyty-promo.mp4): 16:9, 1920x1080
+- [`analyty-promo-9x16.mp4`](analyty-promo-9x16.mp4): 9:16, 1080x1920 for Reels/TikTok/Stories, with the same timing and its own vertical layout
 
 | Time | Scene |
 |---|---|
@@ -22,11 +25,12 @@ Result: [`analyty-promo.mp4`](analyty-promo.mp4)
 pip install numpy
 python3 music.py          # -> music.wav
 node render.mjs           # -> out/analyty-promo.mp4 (needs Playwright + ffmpeg)
-node render.mjs --stills 2,9,20   # individual frames for review
+node render.mjs --portrait # -> out/analyty-promo-9x16.mp4
+node render.mjs --stills 2,9,20   # individual frames for review (add --portrait for 9:16)
 ```
 
 Live preview: serve this folder (`npx serve .`), open `index.html`
-and click to play with sound.
+(or `index.html?portrait` for 9:16) and click to play with sound.
 
 Copy, colours and timings live at the top of each scene function in `scene.js`.
 
